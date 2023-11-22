@@ -330,6 +330,17 @@ let mainAutoAssessment = {
 				console.log(minorResults.r_3_8);  // 点数の確認
 			}
 
+			let iotTemperatureRows = await roomEnvModel.findAll({
+				where: { createdAt: { [Op.like]: yesterday + "%" } },
+				order: [["createdAt", "desc"]]
+			});
+			// if (iotTemperatureRows.length != 0) { // データがあれば
+			if (iotTemperatureRows) { // データが無くても実行する（debug用）
+				// 3=住居, 5=室温
+				minorResults.r_3_5 = await mainAutoAssessment.temperaturePoint(iotTemperatureRows, minorResults);
+				console.log(minorResults.r_3_5);  // 点数の確認
+			}
+
 
 			//--------------------------------------------------------
 			// nullの場所だけ、前日以前の得点を利用する。各得点は-1することで放置していると0点になる
@@ -490,9 +501,23 @@ let mainAutoAssessment = {
 		console.log('mainAutoAssessment.humidityPoint() iotRows:', iotRows);
 
 		return ret;
-	}
+	},
 
+
+	/**
+	 * @func 
+	 * @desc 室温の点数を入れる
+	 * @async
+	 */
+	temperaturePoint: function (iotRows, minorResults) {
+		let ret = 40;
+		console.log('mainAutoAssessment.tmperaturePoint() iotRows:', iotRows);
+
+		return ret;
+	}
 };
+
+
 
 
 //////////////////////////////////////////////////////////////////////
