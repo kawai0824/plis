@@ -315,6 +315,7 @@ let mainAutoAssessment = {
 			}
 			// console.dir( minorResults );
 
+			yesterday = "2023-11-22";
 
 			//--------------------------------------------------------
 			// IoTデータで点数をつける
@@ -334,8 +335,12 @@ let mainAutoAssessment = {
 				console.log(minorResults.r_3_8);  // 点数の確認
 			}
 
-			let iotTemperatureRows = await roomEnvModel.findAll({
-				where: { createdAt: { [Op.like]: yesterday + "%" } },
+			let iotTemperatureRows = await switchBotDataModel.findAll({
+				where: { 
+					createdAt: { [Op.like]: yesterday + "%" } ,
+					[Op.or]: [{ deviceType: 'Meter' }, { deviceType: 'MeterPlus' }],
+					property: 'temperature'
+				},
 				order: [["createdAt", "desc"]]
 			});
 			// if (iotTemperatureRows.length != 0) { // データがあれば
@@ -502,7 +507,7 @@ let mainAutoAssessment = {
 	 */
 	humidityPoint: function (iotRows, minorResults) {
 		let ret = 40;
-		console.log('mainAutoAssessment.humidityPoint() iotRows:', iotRows);
+		//console.log('mainAutoAssessment.humidityPoint() iotRows:', iotRows);
 
 		return ret;
 	},
@@ -514,8 +519,43 @@ let mainAutoAssessment = {
 	 * @async
 	 */
 	temperaturePoint: function (iotRows, minorResults) {
-		let ret = 40;
-		console.log('mainAutoAssessment.tmperaturePoint() iotRows:', iotRows);
+		let ret = 0;
+
+		// console.dir(iotRows);
+
+		/*iotRows.forEach( (e)=>{
+			console.log("-----------------------------");
+			console.dir(e.dataValues.value)
+		})
+
+*/
+		
+		let totalTemperature = 0;
+		iotRows.forEach((entry) => {
+		  const numericValue = parseFloat(entry.dataValues.value);
+		  if (!isNaN(numericValue)) {
+			totalTemperature += numericValue;
+		  }
+		});
+	
+		let averageTemperature = 0;
+		if (iotRows.length > 0) {
+		  averageTemperature = totalTemperature / iotRows.length;
+		} 
+	
+		// ポイント計算
+		if (averageTemperature > 18.0 && averageTemperature < 24.0) {
+		  let resultValue = (averageTemperature - 18.0)/0.1*1.67
+		   ret = Math.round(resultValue * 10) / 10;
+		} else if (averageTemperature > 28.0 && averageTemperature < 34.0) {
+		  let resultValue = (34.0 - averageTemperature)/ 0.1* 1.67;
+		   ret = Math.round(resultValue * 10) / 10;
+		} else if (averageTemperature >= 24.0 && averageTemperature <= 28.0) {
+		  ret = 100;
+		}
+		
+		//console.log('mainAutoAssessment.tmperaturePoint() iotRows:', iotRows);
+		
 
 		return ret;
 	}
